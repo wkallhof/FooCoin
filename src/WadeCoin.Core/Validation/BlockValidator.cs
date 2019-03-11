@@ -5,8 +5,8 @@ namespace WadeCoin.Core.Validation
 {
     public interface IBlockValidator
     {
-        bool HasValidHeader(Block block);
-        bool IsValidBlock(Block block, BlockChain blockChain);
+        ValidationResult HasValidHeader(Block block);
+        ValidationResult IsValidBlock(Block block, BlockChain blockChain);
     }
     public class DefaultBlockValidator : IBlockValidator
     {
@@ -18,7 +18,7 @@ namespace WadeCoin.Core.Validation
             _transactionValidator = transactionValidator;
         }
 
-        public bool IsValidBlock(Block block, BlockChain blockChain)
+        public ValidationResult IsValidBlock(Block block, BlockChain blockChain)
         {
             if(!HasValidHeader(block))
                 return false;
@@ -27,7 +27,7 @@ namespace WadeCoin.Core.Validation
 
         }
 
-        public bool HasValidHeader(Block block)
+        public ValidationResult HasValidHeader(Block block)
         {
             var startString = string.Join("", Enumerable.Range(0, block.Difficulty).Select(x => "0"));
             return _crypto.Hash(block).StartsWith(startString);
