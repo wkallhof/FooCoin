@@ -5,8 +5,8 @@ namespace WadeCoin.Core.Validation
 {
     public interface ITransactionValidator
     {
-        bool IsBlockTransactionValid(Transaction transaction, BlockChain blockChain);
-        bool IsUncomfirmedTransactionValid(Transaction transaction, BlockChain blockChain);
+        ValidationResult IsBlockTransactionValid(Transaction transaction, BlockChain blockChain);
+        ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, BlockChain blockChain);
     }
 
     public class DefaultTransactionValidator : ITransactionValidator
@@ -17,21 +17,16 @@ namespace WadeCoin.Core.Validation
             _crypto = crypto;
         }
 
-        public bool IsBlockTransactionValid(Transaction transaction, BlockChain blockChain)
-        {
-            return ValidateTransactionBody(transaction, blockChain);
-        }
-
-        public bool IsUncomfirmedTransactionValid(Transaction transaction, BlockChain blockChain)
+        public ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, BlockChain blockChain)
         {
             // validate transaction not already in blockchain
             if(blockChain.Blocks.Any(x => x.Transaction.Id.Equals(transaction.Id)))
-                return false;
+                return ValidationResult.Invalid("Transaction is already in blockchain");
 
-            return ValidateTransactionBody(transaction, blockChain);
+            return IsBlockTransactionValid(transaction, blockChain);
         }
 
-        private bool ValidateTransactionBody(Transaction transaction, BlockChain blockChain){
+        public ValidationResult IsBlockTransactionValid(Transaction transaction, BlockChain blockChain){
 
             // validate Id
             if(_crypto.DoubleHash(transaction) != transaction.Id)

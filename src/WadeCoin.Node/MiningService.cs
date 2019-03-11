@@ -88,7 +88,7 @@ namespace WadeCoin.Node
 
         private bool TransactionValid(Transaction transaction){
             // validate this transaction is still valid
-            if(!_transactionValidator.IsUncomfirmedTransactionValid(transaction, _state.BlockChain)){
+            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)){
                 _state.OutstandingTransactions.Remove(transaction);
                 return false;
             }

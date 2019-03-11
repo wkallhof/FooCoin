@@ -95,7 +95,7 @@ namespace WadeCoin.Node.Controllers
             // build the ID
             transaction.Id = _crypto.DoubleHash(transaction);
 
-            if(!_transactionValidator.IsUncomfirmedTransactionValid(transaction, _state.BlockChain))
+            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain))
                 return BadRequest("Transaction was invalid");
 
             _state.OutstandingTransactions.Add(transaction);

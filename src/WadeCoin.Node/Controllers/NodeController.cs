@@ -66,7 +66,7 @@ namespace WadeCoin.Node.Controllers
         public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction){
             UpdatePeersToIgnoreList();
 
-            if(_transactionValidator.IsUncomfirmedTransactionValid(transaction, _state.BlockChain)
+            if(_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)
                  && !_state.OutstandingTransactions.Any(x => x.Id.Equals(transaction.Id))){
 
                 _state.OutstandingTransactions.Add(transaction);

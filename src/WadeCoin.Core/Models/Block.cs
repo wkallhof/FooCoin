@@ -4,9 +4,6 @@ namespace WadeCoin.Core.Models
 {
     public class Block : IHashable
     {
-
-        //Header : PrevHash + Unix + Diff + Nonce + Hash(Transaction)
-
         public string PreviousBlockHash { get; set; }
         public long UnixTimeStamp { get; set; }
         public int Difficulty { get; set; }
