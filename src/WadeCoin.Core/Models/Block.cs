@@ -24,9 +24,9 @@ namespace WadeCoin.Core.Models
             PreviousBlockHash = previousBlockHash ?? string.Empty;
         }
 
-        public string GetHashMessage()
+        public string GetHashMessage(ICrypto crypto)
         {
-            return $"{PreviousBlockHash}{UnixTimeStamp}{Difficulty}{Nonce}{Crypto.Hash(Transaction)}";
+            return $"{PreviousBlockHash}{UnixTimeStamp}{Difficulty}{Nonce}{crypto.Hash(Transaction)}";
         }
     }
 }

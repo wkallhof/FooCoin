@@ -17,7 +17,7 @@ namespace WadeCoin.Core.Models
             Outputs = outputs;
         }
 
-        public string GetHashMessage()
+        public string GetHashMessage(ICrypto crypto)
         {
             var inputs = string.Join(",", Inputs.Select(x => $"{x.TransactionId}:{x.OutputIndex}:{x.FullPubKey}{x.Signature}"));
             var outputs = string.Join(",", Outputs.Select(x => $"{x.PubKeyHash}:{x.Amount}"));

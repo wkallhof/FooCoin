@@ -28,13 +28,14 @@ namespace WadeCoin.Node
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            (var privateKey, var publicKey) = Crypto.GenerateKeys();
+            var crypto = new Crypto();
+            (var privateKey, var publicKey) = crypto.GenerateKeys();
             Console.WriteLine($"Public Key:\n{publicKey}");
             Console.WriteLine();
-            Console.WriteLine($"Public Key Hash:\n{Crypto.DoubleHash(publicKey)}");
+            Console.WriteLine($"Public Key Hash:\n{crypto.DoubleHash(publicKey)}");
 
             services.AddSingleton<State>(new State(){
-                BlockChain = BlockChain.Initialize(publicKey)
+                BlockChain = BlockChain.Initialize(crypto, publicKey)
             });
 
             services.AddSingleton<PrivateState>(new PrivateState()
@@ -46,6 +47,7 @@ namespace WadeCoin.Node
             services.AddTransient<ITransactionValidator, DefaultTransactionValidator>();
             services.AddTransient<IBlockValidator, DefaultBlockValidator>();
             services.AddTransient<IBlockChainValidator, DefaultBlockChainValidator>();
+            services.AddTransient<ICrypto, Crypto>();
 
             services.AddHttpClient<IGossipService, HttpGossipService>();
             services.AddHostedService<MiningService>();

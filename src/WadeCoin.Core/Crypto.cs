@@ -8,22 +8,34 @@ using Org.BouncyCastle.OpenSsl;
 using Org.BouncyCastle.Security;
 using WadeCoin.Core.Extensions;
 
-namespace WadeCoin.Core.Models
+namespace WadeCoin.Core
 {
-
-    public class Crypto
+    public interface ICrypto
     {
-        public static string Hash<T>(T item) where T : IHashable
+        string Hash<T>(T item) where T : IHashable;
+        string DoubleHash<T>(T item) where T : IHashable;
+        string Hash(string input);
+        string DoubleHash(string input);
+        (string privateKey, string publicKey) GenerateKeys();
+        string Sign(string message, string privateKey);
+        bool ValidateSignature(string message, string signedMessage, string publicKey);
+        string Encrypt(string message, string publicKey);
+        string Decrypt(string encryptedMessage, string privateKey);
+    }
+
+    public class Crypto : ICrypto
+    {
+        public string Hash<T>(T item) where T : IHashable
         {
-            return Hash(item.GetHashMessage());
+            return Hash(item.GetHashMessage(this));
         }
 
-        public static string DoubleHash<T>(T item) where T: IHashable
+        public string DoubleHash<T>(T item) where T: IHashable
         {
-            return Hash(Hash(item.GetHashMessage()));
+            return Hash(Hash(item.GetHashMessage(this)));
         }
 
-        public static string Hash(string input)
+        public string Hash(string input)
         {
             using (var sha = SHA256.Create())
             {
@@ -33,17 +45,17 @@ namespace WadeCoin.Core.Models
             }
         }
 
-        public static string DoubleHash(string input){
+        public string DoubleHash(string input){
             return Hash(Hash(input));
         }
 
-        public static (string privateKey, string publicKey) GenerateKeys(){
+        public (string privateKey, string publicKey) GenerateKeys(){
             using(var rsa = new RSACryptoServiceProvider(2048)){
                 return (rsa.ToKeyString(true), rsa.ToKeyString(false));
             }
         }
 
-        public static string Sign(string message, string privateKey){
+        public string Sign(string message, string privateKey){
             var dataToSign = Encoding.UTF8.GetBytes(message); 
    
             using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048))  
@@ -54,7 +66,7 @@ namespace WadeCoin.Core.Models
             }  
         }
 
-        public static bool ValidateSignature(string message, string signedMessage, string publicKey){
+        public bool ValidateSignature(string message, string signedMessage, string publicKey){
             var dataToVerify = Convert.FromBase64String(signedMessage);
             var messageBytes = Encoding.UTF8.GetBytes(message);
 
@@ -65,7 +77,7 @@ namespace WadeCoin.Core.Models
             }  
         }
 
-        public static string Encrypt(string message, string publicKey){
+        public string Encrypt(string message, string publicKey){
             var dataToEncrypt = Encoding.UTF8.GetBytes(message);  
    
             using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider(2048))  
@@ -75,7 +87,7 @@ namespace WadeCoin.Core.Models
             }  
         }
 
-        public static string Decrypt(string encryptedMessage, string privateKey){
+        public string Decrypt(string encryptedMessage, string privateKey){
             // read the encrypted bytes from the file   
             var dataToDecrypt = Convert.FromBase64String(encryptedMessage);  
   
@@ -87,7 +99,7 @@ namespace WadeCoin.Core.Models
             }  
         }
 
-        private static readonly uint[] _lookup32 = CreateLookup32();
+        private readonly uint[] _lookup32 = CreateLookup32();
 
         private static uint[] CreateLookup32()
         {
@@ -100,7 +112,7 @@ namespace WadeCoin.Core.Models
             return result;
         }
 
-        private static string ByteArrayToHexViaLookup32(byte[] bytes)
+        private string ByteArrayToHexViaLookup32(byte[] bytes)
         {
             var lookup32 = _lookup32;
             var result = new char[bytes.Length * 2];

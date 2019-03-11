@@ -21,18 +21,20 @@ namespace WadeCoin.Node.Controllers
         private PrivateState _privateState;
         private ITransactionValidator _transactionValidator;
         private IGossipService _gossipService;
+        private ICrypto _crypto;
 
-        public WalletController(ILogger<WalletController> logger, State state, PrivateState privateState, ITransactionValidator transactionValidator, IGossipService gossipService){
+        public WalletController(ILogger<WalletController> logger, State state, PrivateState privateState, ITransactionValidator transactionValidator, IGossipService gossipService, ICrypto crypto){
             _logger = logger;
             _state = state;
             _privateState = privateState;
             _transactionValidator = transactionValidator;
             _gossipService = gossipService;
+            _crypto = crypto;
         }
 
         [HttpGet("")]
         public IActionResult Wallet(){
-            var pubKeyHash = Crypto.DoubleHash(_privateState.PublicKey);
+            var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
             decimal balance = 0;
             var transactionsToMe = _state.BlockChain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
             foreach(var transaction in transactionsToMe){
@@ -76,11 +78,11 @@ namespace WadeCoin.Node.Controllers
                 var output = previousTransaction.Outputs.ElementAt(input.OutputIndex);
 
                 // verify the output address matches my public key
-                if (output.PubKeyHash != Crypto.DoubleHash(_privateState.PublicKey))
+                if (output.PubKeyHash != _crypto.DoubleHash(_privateState.PublicKey))
                     return BadRequest("Public key mismatch from previous transaction output");
                 
                 // sign the proof to verify I own the private key associated with the public key
-                input.Signature = Crypto.Sign(Crypto.Hash($"{input.TransactionId}{input.OutputIndex}{output.PubKeyHash}"), _privateState.PrivateKey);
+                input.Signature = _crypto.Sign(_crypto.Hash($"{input.TransactionId}{input.OutputIndex}{output.PubKeyHash}"), _privateState.PrivateKey);
                 input.FullPubKey = _privateState.PublicKey;
 
                 moneyIn += output.Amount;
@@ -91,7 +93,7 @@ namespace WadeCoin.Node.Controllers
                 return BadRequest("Money in does not match money out.");
 
             // build the ID
-            transaction.Id = Crypto.DoubleHash(transaction);
+            transaction.Id = _crypto.DoubleHash(transaction);
 
             if(!_transactionValidator.IsUncomfirmedTransactionValid(transaction, _state.BlockChain))
                 return BadRequest("Transaction was invalid");

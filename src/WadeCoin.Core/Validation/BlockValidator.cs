@@ -10,9 +10,11 @@ namespace WadeCoin.Core.Validation
     }
     public class DefaultBlockValidator : IBlockValidator
     {
+        private ICrypto _crypto;
         private ITransactionValidator _transactionValidator;
 
-        public DefaultBlockValidator(ITransactionValidator transactionValidator){
+        public DefaultBlockValidator(ICrypto crypto, ITransactionValidator transactionValidator){
+            _crypto = crypto;
             _transactionValidator = transactionValidator;
         }
 
@@ -28,7 +30,7 @@ namespace WadeCoin.Core.Validation
         public bool HasValidHeader(Block block)
         {
             var startString = string.Join("", Enumerable.Range(0, block.Difficulty).Select(x => "0"));
-            return Crypto.Hash(block).StartsWith(startString);
+            return _crypto.Hash(block).StartsWith(startString);
         }
     }
 }

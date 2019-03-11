@@ -11,6 +11,12 @@ namespace WadeCoin.Core.Validation
 
     public class DefaultTransactionValidator : ITransactionValidator
     {
+        private ICrypto _crypto;
+
+        public DefaultTransactionValidator(ICrypto crypto){
+            _crypto = crypto;
+        }
+
         public bool IsBlockTransactionValid(Transaction transaction, BlockChain blockChain)
         {
             return ValidateTransactionBody(transaction, blockChain);
@@ -28,7 +34,7 @@ namespace WadeCoin.Core.Validation
         private bool ValidateTransactionBody(Transaction transaction, BlockChain blockChain){
 
             // validate Id
-            if(Crypto.DoubleHash(transaction) != transaction.Id)
+            if(_crypto.DoubleHash(transaction) != transaction.Id)
                 return false;
 
             decimal moneyIn = 0;
@@ -42,11 +48,11 @@ namespace WadeCoin.Core.Validation
                 var output = previousTransaction.Outputs.ElementAt(input.OutputIndex);
 
                 // validate output pubkeymatch is pubkey
-                if (output.PubKeyHash != Crypto.DoubleHash(input.FullPubKey))
+                if (output.PubKeyHash != _crypto.DoubleHash(input.FullPubKey))
                     return false;
 
                 // validate owner is owner
-                if(!Crypto.ValidateSignature(GetInputSignatureHash(input, output), input.Signature, input.FullPubKey))
+                if(!_crypto.ValidateSignature(GetInputSignatureHash(input, output), input.Signature, input.FullPubKey))
                     return false;
 
                 // validate matching output is unspent
@@ -65,7 +71,7 @@ namespace WadeCoin.Core.Validation
         }
 
         private string GetInputSignatureHash(Input input, Output matchingOutput){
-            return Crypto.Hash($"{input.TransactionId}{input.OutputIndex}{matchingOutput.PubKeyHash}");
+            return _crypto.Hash($"{input.TransactionId}{input.OutputIndex}{matchingOutput.PubKeyHash}");
         }
     }
 }

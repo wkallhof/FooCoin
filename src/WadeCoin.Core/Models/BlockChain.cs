@@ -12,11 +12,11 @@ namespace WadeCoin.Core.Models
             return block == null ? null : block.Transaction;
         }
 
-        public static BlockChain Initialize(string publicKey){
+        public static BlockChain Initialize(ICrypto crypto, string publicKey){
             var firstTransaction = new Transaction(new List<Input>(), new List<Output>(){
-                new Output(){ Amount = 500000, PubKeyHash = Crypto.DoubleHash(publicKey) }
+                new Output(){ Amount = 500000, PubKeyHash = crypto.DoubleHash(publicKey) }
             });
-            firstTransaction.Id = Crypto.Hash(firstTransaction);
+            firstTransaction.Id = crypto.Hash(firstTransaction);
 
             var blockChain = new BlockChain();
             blockChain.Blocks.Add(new Block(null, firstTransaction));

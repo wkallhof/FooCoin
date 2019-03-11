@@ -22,8 +22,9 @@ namespace WadeCoin.Node
         private IBlockChainValidator _blockChainValidator;
         private ITransactionValidator _transactionValidator;
         private IGossipService _gossipService;
+        private ICrypto _crypto;
 
-        public MiningService(ILogger<MiningService> logger, State state, PrivateState privateState, IBlockValidator blockValidator, ITransactionValidator transactionValidator, IGossipService gossipService, IBlockChainValidator blockChainValidator)
+        public MiningService(ILogger<MiningService> logger, State state, PrivateState privateState, IBlockValidator blockValidator, ITransactionValidator transactionValidator, IGossipService gossipService, IBlockChainValidator blockChainValidator, ICrypto crypto)
         {
             _logger = logger;
             _state = state;
@@ -32,6 +33,7 @@ namespace WadeCoin.Node
             _transactionValidator = transactionValidator;
             _gossipService = gossipService;
             _blockChainValidator = blockChainValidator;
+            _crypto = crypto;
         }
 
         public Task StartAsync(CancellationToken cancellationToken)
@@ -68,7 +70,7 @@ namespace WadeCoin.Node
                 block.UnixTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             }
 
-            block.Hash = Crypto.Hash(block);
+            block.Hash = _crypto.Hash(block);
 
             if(!TransactionValid(transaction))
                 return;
@@ -78,7 +80,7 @@ namespace WadeCoin.Node
 
             // if we've really goobered the blockchain, just reset it
             if(!_blockChainValidator.IsValid(_state.BlockChain)){
-                _state.BlockChain = BlockChain.Initialize(_privateState.PublicKey);
+                _state.BlockChain = BlockChain.Initialize(_crypto, _privateState.PublicKey);
             }
 
             await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x, _state.BlockChain)));
