@@ -14,9 +14,6 @@ namespace WadeCoin.Core.Models
         public string Miner { get; set; }
         
         public Block(string previousBlockHash, Transaction transaction){
-            if(transaction == null)
-                throw new ArgumentException("Transaction needed when creating new Block");
-
             Transaction = transaction;
             PreviousBlockHash = previousBlockHash ?? string.Empty;
         }

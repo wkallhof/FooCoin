@@ -1,3 +1,4 @@
+using System.Linq;
 using Bogus;
 using WadeCoin.Core.Models;
 
@@ -24,13 +25,13 @@ namespace WadeCoin.Core.UnitTests.Builders
             Difficulty = _faker.Random.Int(min: 0, max: 10);
             Nonce = _faker.Random.String(10);
             Transaction = new TransactionBuilder();
-            Hash = _faker.Random.Hash();
+            Hash = string.Join("", Enumerable.Range(0, Difficulty).Select(x => "0")) + _faker.Random.Hash();
             Miner = _faker.Internet.UserName();
         }
 
         public Block Build()
         {
-            var block = new Block(PreviousBlockHash, Transaction.Build());
+            var block = new Block(PreviousBlockHash, Transaction != null ? Transaction.Build() : null);
             block.UnixTimeStamp = UnixTimeStamp;
             block.Difficulty = Difficulty;
             block.Nonce = Nonce;
@@ -42,6 +43,16 @@ namespace WadeCoin.Core.UnitTests.Builders
         public BlockBuilder WithPreviousBlockHash(string previousBlockHash)
         {
             PreviousBlockHash = previousBlockHash;
+            return this;
+        }
+
+        public BlockBuilder WithHash(string hash){
+            Hash = hash;
+            return this;
+        }
+
+        public BlockBuilder WithTransaction(TransactionBuilder transaction){
+            Transaction = transaction;
             return this;
         }
     }
