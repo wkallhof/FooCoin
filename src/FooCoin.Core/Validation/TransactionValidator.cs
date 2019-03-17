@@ -5,12 +5,12 @@ namespace FooCoin.Core.Validation
 {
     public interface ITransactionValidator
     {
-        ValidationResult IsBlockTransactionValid(Transaction transaction, BlockChain blockChain);
-        ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, BlockChain blockChain);
+        ValidationResult IsBlockTransactionValid(Transaction transaction, Blockchain blockchain);
+        ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, Blockchain blockchain);
     }
 
     public class TransactionValidationMessage{
-        public static string TransactionAlreadyInBlockChain = "Transaction is already in blockchain";
+        public static string TransactionAlreadyInBlockchain = "Transaction is already in blockchain";
         public static string IdDoesNotMatchHash = "Id does match transaction hash";
         public static string MatchingTransactionNotFoundForInput = "No matching transaction found for input";
         public static string PublicKeyMismatch = "Output PubKeyHash does not match hash of Input's full public key";
@@ -30,16 +30,16 @@ namespace FooCoin.Core.Validation
             _crypto = crypto;
         }
 
-        public ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, BlockChain blockChain)
+        public ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, Blockchain blockchain)
         {
             // validate transaction not already in blockchain
-            if(blockChain.Blocks.Any(x => x.Transaction.Id.Equals(transaction.Id)))
-                return Invalid(TransactionValidationMessage.TransactionAlreadyInBlockChain);
+            if(blockchain.Blocks.Any(x => x.Transaction.Id.Equals(transaction.Id)))
+                return Invalid(TransactionValidationMessage.TransactionAlreadyInBlockchain);
 
-            return IsBlockTransactionValid(transaction, blockChain);
+            return IsBlockTransactionValid(transaction, blockchain);
         }
 
-        public ValidationResult IsBlockTransactionValid(Transaction transaction, BlockChain blockChain){
+        public ValidationResult IsBlockTransactionValid(Transaction transaction, Blockchain blockchain){
 
             // validate Id
             if(_crypto.DoubleHash(transaction) != transaction.Id)
@@ -55,7 +55,7 @@ namespace FooCoin.Core.Validation
             decimal moneyOut = transaction.Outputs.Sum(x => x.Amount);
             foreach(var input in transaction.Inputs){
                 // validate we have a matching previous transaction for input
-                var previousTransaction = blockChain.FindTransaction(input.TransactionId);
+                var previousTransaction = blockchain.FindTransaction(input.TransactionId);
                 if (previousTransaction == null)
                     return Invalid(TransactionValidationMessage.MatchingTransactionNotFoundForInput);
 
@@ -73,7 +73,7 @@ namespace FooCoin.Core.Validation
                     return Invalid(TransactionValidationMessage.InputSignatureInvalid);
 
                 // validate matching output is unspent
-                if(blockChain.Blocks.Any(x => 
+                if(blockchain.Blocks.Any(x => 
                     !x.Transaction.Id.Equals(transaction.Id) 
                     && x.Transaction.Inputs.Any(y => y.TransactionId.Equals(input.TransactionId) && y.OutputIndex.Equals(input.OutputIndex))))
                     return Invalid(TransactionValidationMessage.InputsOutputSpent);

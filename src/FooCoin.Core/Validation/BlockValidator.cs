@@ -6,7 +6,7 @@ namespace FooCoin.Core.Validation
     public interface IBlockValidator
     {
         ValidationResult HasValidHeader(Block block);
-        ValidationResult IsValidBlock(Block block, BlockChain blockChain);
+        ValidationResult IsValidBlock(Block block, Blockchain blockchain);
     }
 
     public class BlockValidationMessage{
@@ -29,7 +29,7 @@ namespace FooCoin.Core.Validation
             _state = state;
         }
 
-        public ValidationResult IsValidBlock(Block block, BlockChain blockChain)
+        public ValidationResult IsValidBlock(Block block, Blockchain blockchain)
         {
             if(block == null)
                 return ValidationResult.Invalid(BlockValidationMessage.BlockWasNull);
@@ -41,14 +41,14 @@ namespace FooCoin.Core.Validation
             if(!headerValidationResult.IsValid)
                 return headerValidationResult;
 
-            return _transactionValidator.IsBlockTransactionValid(block.Transaction, blockChain);
+            return _transactionValidator.IsBlockTransactionValid(block.Transaction, blockchain);
         }
 
         public ValidationResult HasValidHeader(Block block)
         {
             if(block.Difficulty != _state.Difficulty)
                 return ValidationResult.Invalid(BlockValidationMessage.BlockDifficultyInvalid);
-                
+
             var startString = string.Join("", Enumerable.Range(0, block.Difficulty).Select(x => "0"));
             var hash = _crypto.Hash(block);
 

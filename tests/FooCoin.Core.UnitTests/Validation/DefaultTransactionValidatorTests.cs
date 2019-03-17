@@ -24,26 +24,26 @@ namespace FooCoin.Core.UnitTests.Validation
         }
 
         [Fact]
-        public void IsUnconfirmedTransactionValid_ReturnsInvalid_IfTransactionIsAlreadyInBlockChain(){
+        public void IsUnconfirmedTransactionValid_ReturnsInvalid_IfTransactionIsAlreadyInBlockchain(){
             var transaction = GetFilledOutTransaction();
-            var blockChain = InitializeBlockChainWithTransactions(transaction);
+            var blockchain = InitializeBlockchainWithTransactions(transaction);
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsUnconfirmedTransactionValid(transaction, blockChain);
+            var result = validator.IsUnconfirmedTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
-            Assert.Equal(TransactionValidationMessage.TransactionAlreadyInBlockChain, result.Error);
+            Assert.Equal(TransactionValidationMessage.TransactionAlreadyInBlockchain, result.Error);
         }
 
         [Fact]
         public void IsBlockTransactionValid_ReturnsInvalid_IfTransactionIdIsNotHashOfTransaction(){
             var transaction = GetFilledOutTransaction();
-            var blockChain = InitializeBlockChainWithTransactions(transaction);
+            var blockchain = InitializeBlockchainWithTransactions(transaction);
             _fakeCrypto.Setup(x => x.DoubleHash(transaction)).Returns(_random.Hash());
 
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsBlockTransactionValid(transaction, blockChain);
+            var result = validator.IsBlockTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
             Assert.Equal(TransactionValidationMessage.IdDoesNotMatchHash, result.Error);
@@ -53,12 +53,12 @@ namespace FooCoin.Core.UnitTests.Validation
         public void IsBlockTransactionValid_ReturnsInvalid_IfInputListIsEmpty(){
             var transaction = new Transaction(new List<Input>(), OutputFaker.Generate(1));
             transaction.Id = _random.Hash();
-            var blockChain = InitializeBlockChainWithTransactions(transaction);
+            var blockchain = InitializeBlockchainWithTransactions(transaction);
             _fakeCrypto.Setup(x => x.DoubleHash(transaction)).Returns(transaction.Id);
 
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsBlockTransactionValid(transaction, blockChain);
+            var result = validator.IsBlockTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
             Assert.Equal(TransactionValidationMessage.TransactionMissingInputs, result.Error);
@@ -68,12 +68,12 @@ namespace FooCoin.Core.UnitTests.Validation
         public void IsBlockTransactionValid_ReturnsInvalid_IfOutputListIsEmpty(){
             var transaction = new Transaction(InputFaker.Generate(1), new List<Output>());
             transaction.Id = _random.Hash();
-            var blockChain = InitializeBlockChainWithTransactions(transaction);
+            var blockchain = InitializeBlockchainWithTransactions(transaction);
             _fakeCrypto.Setup(x => x.DoubleHash(transaction)).Returns(transaction.Id);
 
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsBlockTransactionValid(transaction, blockChain);
+            var result = validator.IsBlockTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
             Assert.Equal(TransactionValidationMessage.TransactionMissingOutputs, result.Error);
@@ -83,12 +83,12 @@ namespace FooCoin.Core.UnitTests.Validation
         public void IsBlockTransactionValid_ReturnsInvalid_IfInputHasInvalidTransactionReference(){
             var firstTransaction = GetFilledOutTransaction();
             var transaction = GetFilledOutTransaction();
-            var blockChain = InitializeBlockChainWithTransactions(firstTransaction, transaction);
+            var blockchain = InitializeBlockchainWithTransactions(firstTransaction, transaction);
             _fakeCrypto.Setup(x => x.DoubleHash(transaction)).Returns(transaction.Id);
 
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsBlockTransactionValid(transaction, blockChain);
+            var result = validator.IsBlockTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
             Assert.Equal(TransactionValidationMessage.MatchingTransactionNotFoundForInput, result.Error);
@@ -101,12 +101,12 @@ namespace FooCoin.Core.UnitTests.Validation
 
             var transaction = new Transaction(new List<Input>(){invalidInput}, OutputFaker.Generate(1));
             transaction.Id = _random.Hash();
-            var blockChain = InitializeBlockChainWithTransactions(firstTransaction, transaction);
+            var blockchain = InitializeBlockchainWithTransactions(firstTransaction, transaction);
             _fakeCrypto.Setup(x => x.DoubleHash(transaction)).Returns(transaction.Id);
 
             var validator = new DefaultTransactionValidator(_fakeCrypto.Object);
 
-            var result = validator.IsBlockTransactionValid(transaction, blockChain);
+            var result = validator.IsBlockTransactionValid(transaction, blockchain);
 
             Assert.False(result.IsValid);
             Assert.Equal(TransactionValidationMessage.InputsOutputIndexExceedsRange, result.Error);
@@ -141,13 +141,13 @@ namespace FooCoin.Core.UnitTests.Validation
                 .CustomInstantiator(f => new Transaction(InputFaker.Generate(f.Random.Int(min: 1, max: 5)), OutputFaker.Generate(f.Random.Int(min: 1, max: 5))))
                 .RuleFor(x => x.Id, f => f.Random.Hash(10));
 
-        private BlockChain InitializeBlockChainWithTransactions(params Transaction[] transactions){
+        private Blockchain InitializeBlockchainWithTransactions(params Transaction[] transactions){
             var random = new Randomizer();
-            var blockChain = new BlockChain();
+            var blockchain = new Blockchain();
 
-            transactions.ToList().ForEach(x => blockChain.Blocks.Add(new Block(random.Hash(10), x)));
+            transactions.ToList().ForEach(x => blockchain.Blocks.Add(new Block(random.Hash(10), x)));
 
-            return blockChain;
+            return blockchain;
         }
 
     }

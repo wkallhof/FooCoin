@@ -19,15 +19,15 @@ namespace FooCoin.Node.Controllers
         private ILogger<NodeController> _logger;
         private State _state;
         private PrivateState _privateState;
-        private IBlockChainValidator _blockChainValidator;
+        private IBlockchainValidator _blockchainValidator;
         private ITransactionValidator _transactionValidator;
         private IGossipService _gossipService;
 
-        public NodeController(ILogger<NodeController> logger, State state, PrivateState privateState, IBlockChainValidator blockChainValidator, ITransactionValidator transactionValidator, IGossipService gossipService){
+        public NodeController(ILogger<NodeController> logger, State state, PrivateState privateState, IBlockchainValidator blockchainValidator, ITransactionValidator transactionValidator, IGossipService gossipService){
             _logger = logger;
             _state = state;
             _privateState = privateState;
-            _blockChainValidator = blockChainValidator;
+            _blockchainValidator = blockchainValidator;
             _transactionValidator = transactionValidator;
             _gossipService = gossipService;
         }
@@ -67,7 +67,7 @@ namespace FooCoin.Node.Controllers
         public async Task<IActionResult> AddTransaction([FromBody] Transaction transaction){
             UpdatePeersToIgnoreList();
 
-            if(_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)
+            if(_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.Blockchain)
                  && !_state.OutstandingTransactions.ContainsKey(transaction.Id)){
 
                 if(!_state.OutstandingTransactions.TryAdd(transaction.Id, transaction))
@@ -81,17 +81,17 @@ namespace FooCoin.Node.Controllers
         }
 
         [HttpPost("blockchain")]
-        public async Task<IActionResult> AddBlockChain([FromBody] BlockChain blockChain){
+        public async Task<IActionResult> AddBlockchain([FromBody] Blockchain blockchain){
             UpdatePeersToIgnoreList();
 
-            if(!_blockChainValidator.IsValid(blockChain))
+            if(!_blockchainValidator.IsValid(blockchain))
                 return BadRequest("Invalid Blockchain");
 
-            if(blockChain.Blocks.Count > _state.BlockChain.Blocks.Count){
-                _state.BlockChain = blockChain;
-                _logger.LogInformation("BlockChain Copied From Peer");
+            if(blockchain.Blocks.Count > _state.Blockchain.Blocks.Count){
+                _state.Blockchain = blockchain;
+                _logger.LogInformation("Blockchain Copied From Peer");
 
-                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x.Value, blockChain)));
+                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockchainAsync(x.Value, blockchain)));
             }
             
             return Ok();

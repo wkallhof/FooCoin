@@ -105,11 +105,11 @@ namespace FooCoin.Node.Wallet
         }
 
         private IEnumerable<Transaction> GetAllTransactionsWhereCoinReceived(string pubKeyHash){
-            return _state.BlockChain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
+            return _state.Blockchain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
         }
 
         private bool TransactionOutputWasSpent(string transactionId, int outputIndex){
-            return _state.BlockChain.Blocks
+            return _state.Blockchain.Blocks
                 .SelectMany(x => x.Transaction.Inputs)
                 .Any(x => x.TransactionId.Equals(transactionId) && x.OutputIndex.Equals(outputIndex));
         }
@@ -126,7 +126,7 @@ namespace FooCoin.Node.Wallet
             decimal moneyOut = transaction.Outputs.Sum(x => x.Amount);
             foreach(var input in transaction.Inputs){
                 // find the previous transaction referenced by new input
-                var previousTransaction = _state.BlockChain.FindTransaction(input.TransactionId);
+                var previousTransaction = _state.Blockchain.FindTransaction(input.TransactionId);
                 if (previousTransaction == null)
                     return BadRequest($"Previous transaction {input.TransactionId} not found.");
 
@@ -151,7 +151,7 @@ namespace FooCoin.Node.Wallet
             // build the ID
             transaction.Id = _crypto.DoubleHash(transaction);
 
-            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain))
+            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.Blockchain))
                 return BadRequest("Transaction was invalid");
 
             _state.OutstandingTransactions.TryAdd(transaction.Id, transaction);

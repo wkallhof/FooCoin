@@ -16,7 +16,7 @@ namespace FooCoin.Node
     {
         Task ShareNewTransactionAsync(Uri peer, Transaction transaction);
         Task SharePeersAsync(Uri peer, List<Uri> peers);
-        Task ShareBlockChainAsync(Uri peer, BlockChain blockChain);
+        Task ShareBlockchainAsync(Uri peer, Blockchain blockchain);
     }
 
     public class HttpGossipService : IGossipService
@@ -31,8 +31,8 @@ namespace FooCoin.Node
             _state = state;
         }
 
-        public async Task ShareBlockChainAsync(Uri peer, BlockChain blockChain)
-            => await Post("node/blockchain", peer, blockChain);
+        public async Task ShareBlockchainAsync(Uri peer, Blockchain blockchain)
+            => await Post("node/blockchain", peer, blockchain);
 
         public async Task ShareNewTransactionAsync(Uri peer, Transaction transaction)
             => await Post("node/transactions", peer, transaction);

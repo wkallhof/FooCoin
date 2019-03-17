@@ -35,7 +35,7 @@ namespace FooCoin.Node
             Console.WriteLine($"Public Key Hash:\n{crypto.DoubleHash(publicKey)}");
 
             services.AddSingleton<State>(new State(){
-                BlockChain = BlockChain.Initialize(crypto, publicKey)
+                Blockchain = Blockchain.Initialize(crypto, publicKey)
             });
 
             services.AddSingleton<PrivateState>(new PrivateState()
@@ -46,7 +46,7 @@ namespace FooCoin.Node
 
             services.AddTransient<ITransactionValidator, DefaultTransactionValidator>();
             services.AddTransient<IBlockValidator, DefaultBlockValidator>();
-            services.AddTransient<IBlockChainValidator, DefaultBlockChainValidator>();
+            services.AddTransient<IBlockchainValidator, DefaultBlockchainValidator>();
             services.AddTransient<ICrypto, Crypto>();
 
             services.AddHttpClient<IGossipService, HttpGossipService>();

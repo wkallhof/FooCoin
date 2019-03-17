@@ -8,16 +8,16 @@ using Xunit;
 
 namespace FooCoin.Core.UnitTests.Validation
 {
-    public class DefaultBlockChainValidatorTests
+    public class DefaultBlockchainValidatorTests
     {
         private Mock<IBlockValidator> _fakeBlockValidator;
         private Bogus.Faker _faker;
 
-        public DefaultBlockChainValidatorTests(){
+        public DefaultBlockchainValidatorTests(){
             _faker = new Bogus.Faker();
 
             _fakeBlockValidator = new Mock<IBlockValidator>();
-            _fakeBlockValidator.Setup(x => x.IsValidBlock(It.IsAny<Block>(), It.IsAny<BlockChain>())).Returns(true);
+            _fakeBlockValidator.Setup(x => x.IsValidBlock(It.IsAny<Block>(), It.IsAny<Blockchain>())).Returns(true);
         }
 
         /// <summary>
@@ -26,13 +26,13 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_ReturnsInvalid_WhenBlocksCollectionIsNull() {
-            var blockChain = new BlockChainBuilder().WithBlocks((List<BlockBuilder>)null).Build();
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+            var blockchain = new BlockchainBuilder().WithBlocks((List<BlockBuilder>)null).Build();
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.False(result.IsValid);
-            Assert.Equal(BlockChainValidationMessage.BlockChainIsNullOrEmpty, result.Error);
+            Assert.Equal(BlockchainValidationMessage.BlockchainIsNullOrEmpty, result.Error);
         }
 
         /// <summary>
@@ -41,13 +41,13 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_ReturnsInvalid_WhenBlocksCollectionIsEmpty() {
-            var blockChain = new BlockChainBuilder().WithBlocks(new List<BlockBuilder>()).Build();
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+            var blockchain = new BlockchainBuilder().WithBlocks(new List<BlockBuilder>()).Build();
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.False(result.IsValid);
-            Assert.Equal(BlockChainValidationMessage.BlockChainIsNullOrEmpty, result.Error);
+            Assert.Equal(BlockchainValidationMessage.BlockchainIsNullOrEmpty, result.Error);
         }
 
         /// <summary>
@@ -56,10 +56,10 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_ReturnsValid_IfThereIsOnlyOneBlock(){
-            var blockChain = new BlockChainBuilder().WithValidBlocks(1).Build();
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+            var blockchain = new BlockchainBuilder().WithValidBlocks(1).Build();
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.True(result.IsValid);
         }
@@ -71,14 +71,14 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_SkipsGenesisBlock_WhenDoingIndividualBlockValidation() {
-            var blockChain = new BlockChainBuilder().WithValidBlocks(2).Build();
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+            var blockchain = new BlockchainBuilder().WithValidBlocks(2).Build();
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
-            _fakeBlockValidator.Verify(x => x.IsValidBlock(It.IsAny<Block>(), blockChain), Times.Once);
-            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockChain.Blocks.ElementAt(1), blockChain), Times.Once);
-            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockChain.Blocks.ElementAt(0), blockChain), Times.Never);
+            _fakeBlockValidator.Verify(x => x.IsValidBlock(It.IsAny<Block>(), blockchain), Times.Once);
+            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.Blocks.ElementAt(1), blockchain), Times.Once);
+            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.Blocks.ElementAt(0), blockchain), Times.Never);
         }
 
         /// <summary>
@@ -88,14 +88,14 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_ReturnsInvalid_IfAnyBlockIsInvalid() {
-             var blockChain = new BlockChainBuilder().WithValidBlocks(2).Build();
-            _fakeBlockValidator.Setup(x => x.IsValidBlock(It.IsAny<Block>(), blockChain)).Returns(ValidationResult.Invalid(_faker.Lorem.Sentence()));
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+             var blockchain = new BlockchainBuilder().WithValidBlocks(2).Build();
+            _fakeBlockValidator.Setup(x => x.IsValidBlock(It.IsAny<Block>(), blockchain)).Returns(ValidationResult.Invalid(_faker.Lorem.Sentence()));
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.False(result.IsValid);
-            Assert.Equal(BlockChainValidationMessage.NotAllBlocksAreValid, result.Error);
+            Assert.Equal(BlockchainValidationMessage.NotAllBlocksAreValid, result.Error);
         }
 
         /// <summary>
@@ -104,28 +104,28 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValid_ReturnsInvalid_IfBlocksAreNotLinked() {
-            var blockChain = new BlockChainBuilder().WithBlocks(
+            var blockchain = new BlockchainBuilder().WithBlocks(
                 new BlockBuilder(),
                 new BlockBuilder()
             ).Build();
 
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.False(result.IsValid);
-            Assert.Equal(BlockChainValidationMessage.NotAllBlocksAreLinked, result.Error);
+            Assert.Equal(BlockchainValidationMessage.NotAllBlocksAreLinked, result.Error);
         }
         
         /// <summary>
         /// Make sure we actually return valid if things are valid
         /// </summary>
         [Fact]
-        public void IsValid_ReturnsValid_WhenBlockChainIsValid() {
-            var blockChain = new BlockChainBuilder().WithValidBlocks(2).Build();
-            var blockChainValidator = new DefaultBlockChainValidator(_fakeBlockValidator.Object);
+        public void IsValid_ReturnsValid_WhenBlockchainIsValid() {
+            var blockchain = new BlockchainBuilder().WithValidBlocks(2).Build();
+            var blockchainValidator = new DefaultBlockchainValidator(_fakeBlockValidator.Object);
 
-            var result = blockChainValidator.IsValid(blockChain);
+            var result = blockchainValidator.IsValid(blockchain);
 
             Assert.True(result.IsValid);
         }

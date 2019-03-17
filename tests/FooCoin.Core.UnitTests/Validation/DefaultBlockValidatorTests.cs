@@ -19,7 +19,7 @@ namespace FooCoin.Core.UnitTests.Validation
             _faker = new Bogus.Faker();
 
             _fakeTransactionValidator = new Mock<ITransactionValidator>();
-            _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(It.IsAny<Transaction>(), It.IsAny<BlockChain>())).Returns(true);
+            _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(It.IsAny<Transaction>(), It.IsAny<Blockchain>())).Returns(true);
 
             _fakeState = new State() { Difficulty = _faker.Random.Int(1, 5) };
         }
@@ -88,7 +88,7 @@ namespace FooCoin.Core.UnitTests.Validation
         public void IsValidBlock_ReturnsInvalid_IfBlockIsNull(){
             var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
-            var result = blockValidator.IsValidBlock(null, new BlockChain());
+            var result = blockValidator.IsValidBlock(null, new Blockchain());
 
             Assert.False(result.IsValid);
             Assert.Equal(BlockValidationMessage.BlockWasNull, result.Error);
@@ -103,7 +103,7 @@ namespace FooCoin.Core.UnitTests.Validation
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
             var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
-            var result = blockValidator.IsValidBlock(block, new BlockChain());
+            var result = blockValidator.IsValidBlock(block, new Blockchain());
 
             Assert.False(result.IsValid);
             Assert.Equal(BlockValidationMessage.TransactionWasNull, result.Error);
@@ -117,12 +117,12 @@ namespace FooCoin.Core.UnitTests.Validation
             var block = GetValidBlockBuilder().Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
             var invalidMessage = _faker.Lorem.Sentence();
-            _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(block.Transaction, It.IsAny<BlockChain>()))
+            _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(block.Transaction, It.IsAny<Blockchain>()))
                 .Returns(ValidationResult.Invalid(invalidMessage));
 
             var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
-            var result = blockValidator.IsValidBlock(block, new BlockChain());
+            var result = blockValidator.IsValidBlock(block, new Blockchain());
 
             Assert.False(result.IsValid);
             Assert.Equal(invalidMessage, result.Error);
@@ -137,7 +137,7 @@ namespace FooCoin.Core.UnitTests.Validation
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
             var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
-            var result = blockValidator.IsValidBlock(block, new BlockChain());
+            var result = blockValidator.IsValidBlock(block, new Blockchain());
 
             Assert.True(result.IsValid);
         }

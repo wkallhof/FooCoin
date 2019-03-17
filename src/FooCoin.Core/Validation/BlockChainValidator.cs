@@ -4,45 +4,45 @@ using FooCoin.Core.Models;
 
 namespace FooCoin.Core.Validation
 {
-    public interface IBlockChainValidator
+    public interface IBlockchainValidator
     {
-        ValidationResult IsValid(BlockChain blockChain);
+        ValidationResult IsValid(Blockchain blockchain);
     }
 
-    public class BlockChainValidationMessage{
-        public static string BlockChainIsNullOrEmpty = "The blockchain is null or empty";
+    public class BlockchainValidationMessage{
+        public static string BlockchainIsNullOrEmpty = "The blockchain is null or empty";
         public static string NotAllBlocksAreValid = "Not all blocks in blockchain are valid";
         public static string NotAllBlocksAreLinked = "Not all blocks are linked in blockchain";
     }
 
-    public class DefaultBlockChainValidator : IBlockChainValidator
+    public class DefaultBlockchainValidator : IBlockchainValidator
     {
         private IBlockValidator _blockValidator;
 
-        public DefaultBlockChainValidator(IBlockValidator blockValidator){
+        public DefaultBlockchainValidator(IBlockValidator blockValidator){
             _blockValidator = blockValidator;
         }
 
-        public ValidationResult IsValid(BlockChain blockChain)
+        public ValidationResult IsValid(Blockchain blockchain)
         {
             // make sure that we have blocks
-            if(blockChain?.Blocks == null || !blockChain.Blocks.Any())
-                return ValidationResult.Invalid(BlockChainValidationMessage.BlockChainIsNullOrEmpty);
+            if(blockchain?.Blocks == null || !blockchain.Blocks.Any())
+                return ValidationResult.Invalid(BlockchainValidationMessage.BlockchainIsNullOrEmpty);
 
             // if we only have one, return valid
-            if(blockChain.Blocks.Count == 1)
+            if(blockchain.Blocks.Count == 1)
                 return ValidationResult.Valid();
 
             // skip block validation for the genesis block
-            var blocksWithoutGenesis = blockChain.Blocks.Skip(1);
+            var blocksWithoutGenesis = blockchain.Blocks.Skip(1);
 
             // ensure all blocks themselves are valid
-            if(!blocksWithoutGenesis.All(x => _blockValidator.IsValidBlock(x, blockChain)))
-                return ValidationResult.Invalid(BlockChainValidationMessage.NotAllBlocksAreValid);
+            if(!blocksWithoutGenesis.All(x => _blockValidator.IsValidBlock(x, blockchain)))
+                return ValidationResult.Invalid(BlockchainValidationMessage.NotAllBlocksAreValid);
 
             // ensure all blocks are properly linked in order
-            if(!blockChain.Blocks.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true))
-                return ValidationResult.Invalid(BlockChainValidationMessage.NotAllBlocksAreLinked);
+            if(!blockchain.Blocks.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true))
+                return ValidationResult.Invalid(BlockchainValidationMessage.NotAllBlocksAreLinked);
 
             return ValidationResult.Valid();
         }

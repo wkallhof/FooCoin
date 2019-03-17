@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace FooCoin.Core.Models
 {
-    public class BlockChain
+    public class Blockchain
     {
         public List<Block> Blocks { get; set; } = new List<Block>();
 
@@ -12,7 +12,7 @@ namespace FooCoin.Core.Models
             return block == null ? null : block.Transaction;
         }
 
-        public static BlockChain Initialize(ICrypto crypto, string publicKey){
+        public static Blockchain Initialize(ICrypto crypto, string publicKey){
             var firstTransaction = new Transaction(new List<Input>(), new List<Output>(){
                 new Output(){ Amount = 500000, PubKeyHash = crypto.DoubleHash(publicKey) }
             });
@@ -20,9 +20,9 @@ namespace FooCoin.Core.Models
             var block = new Block(null, firstTransaction);
             block.Hash = crypto.Hash(block);
 
-            var blockChain = new BlockChain();
-            blockChain.Blocks.Add(block);
-            return blockChain;
+            var blockchain = new Blockchain();
+            blockchain.Blocks.Add(block);
+            return blockchain;
         }
     }
 }

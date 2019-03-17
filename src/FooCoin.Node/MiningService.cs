@@ -19,12 +19,12 @@ namespace FooCoin.Node
         private State _state;
         private PrivateState _privateState;
         private IBlockValidator _blockValidator;
-        private IBlockChainValidator _blockChainValidator;
+        private IBlockchainValidator _blockchainValidator;
         private ITransactionValidator _transactionValidator;
         private IGossipService _gossipService;
         private ICrypto _crypto;
 
-        public MiningService(ILogger<MiningService> logger, State state, PrivateState privateState, IBlockValidator blockValidator, ITransactionValidator transactionValidator, IGossipService gossipService, IBlockChainValidator blockChainValidator, ICrypto crypto)
+        public MiningService(ILogger<MiningService> logger, State state, PrivateState privateState, IBlockValidator blockValidator, ITransactionValidator transactionValidator, IGossipService gossipService, IBlockchainValidator blockchainValidator, ICrypto crypto)
         {
             _logger = logger;
             _state = state;
@@ -32,7 +32,7 @@ namespace FooCoin.Node
             _blockValidator = blockValidator;
             _transactionValidator = transactionValidator;
             _gossipService = gossipService;
-            _blockChainValidator = blockChainValidator;
+            _blockchainValidator = blockchainValidator;
             _crypto = crypto;
         }
 
@@ -49,7 +49,7 @@ namespace FooCoin.Node
             if(!_state.OutstandingTransactions.Any())
                 return;
 
-            var lastBlock = _state.BlockChain.Blocks.LastOrDefault();
+            var lastBlock = _state.Blockchain.Blocks.LastOrDefault();
             
             if(lastBlock == null)
                 return;
@@ -77,19 +77,19 @@ namespace FooCoin.Node
 
             _logger.LogInformation("Block mined!");
             _state.OutstandingTransactions.TryRemove(transaction.Key, out var removedTransaction);
-            _state.BlockChain.Blocks.Add(block);
+            _state.Blockchain.Blocks.Add(block);
 
             // if we've really goobered the blockchain, just reset it
-            if(!_blockChainValidator.IsValid(_state.BlockChain)){
-                _state.BlockChain = BlockChain.Initialize(_crypto, _privateState.PublicKey);
+            if(!_blockchainValidator.IsValid(_state.Blockchain)){
+                _state.Blockchain = Blockchain.Initialize(_crypto, _privateState.PublicKey);
             }
 
-            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x.Value, _state.BlockChain)));
+            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockchainAsync(x.Value, _state.Blockchain)));
         }
 
         private bool TransactionValid(Transaction transaction){
             // validate this transaction is still valid
-            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)){
+            if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.Blockchain)){
                 _state.OutstandingTransactions.TryRemove(transaction.Id, out var removedTransaction);
                 return false;
             }

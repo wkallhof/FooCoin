@@ -5,33 +5,33 @@ using FooCoin.Core.Extensions;
 
 namespace FooCoin.Core.UnitTests.Builders
 {
-    public class BlockChainBuilder : IBuilder<BlockChain>
+    public class BlockchainBuilder : IBuilder<Blockchain>
     {
         public List<BlockBuilder> Blocks { get; private set; }
 
-        public BlockChainBuilder(){
+        public BlockchainBuilder(){
             Blocks = new List<BlockBuilder>();
         }
 
-        public BlockChain Build()
+        public Blockchain Build()
         {
-            return new BlockChain()
+            return new Blockchain()
             {
                 Blocks = Blocks != null ? Blocks.Select(x => x.Build()).ToList() : null
             };
         }
 
-        public BlockChainBuilder WithBlocks(List<BlockBuilder> blocks){
+        public BlockchainBuilder WithBlocks(List<BlockBuilder> blocks){
             Blocks = blocks;
             return this;
         }
 
-        public BlockChainBuilder WithBlocks(params BlockBuilder[] blocks){
+        public BlockchainBuilder WithBlocks(params BlockBuilder[] blocks){
             Blocks = blocks.ToList();
             return this;
         }
 
-        public BlockChainBuilder WithValidBlocks(int numberOfBlocks){
+        public BlockchainBuilder WithValidBlocks(int numberOfBlocks){
             Blocks = new List<BlockBuilder>();
             
             if(numberOfBlocks <= 0)
