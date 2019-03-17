@@ -76,9 +76,6 @@ namespace FooCoin.Node.Controllers
                 _logger.LogInformation($"Incoming Transaction Added : " + transaction.Id);
                 await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x.Value, transaction)));
             }
-            else{
-                _logger.LogInformation($"Incoming Transaction Ignored : " + transaction.Id);
-            }
 
             return Ok();
         }

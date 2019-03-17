@@ -14,7 +14,6 @@ namespace FooCoin.Node
 {
     internal class MiningService : IHostedService, IDisposable
     {
-        private const int DIFFICULTY = 5;
         private readonly ILogger _logger;
         private NoOverlapTimer _timer;
         private State _state;
@@ -61,7 +60,7 @@ namespace FooCoin.Node
                 return;
 
             var block = new Block(lastBlock.Hash, transaction.Value);
-            block.Difficulty = DIFFICULTY;
+            block.Difficulty = _state.Difficulty;
             block.Miner = "FooCoinMinder";
             block.UnixTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             block.Nonce = Guid.NewGuid().ToString();

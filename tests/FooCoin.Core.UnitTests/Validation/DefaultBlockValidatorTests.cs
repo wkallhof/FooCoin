@@ -10,14 +10,29 @@ namespace FooCoin.Core.UnitTests.Validation
     {
         private FakeCrypto _fakeCrypto;
         private Mock<ITransactionValidator> _fakeTransactionValidator;
+        private State _fakeState;
         private Bogus.Faker _faker;
 
         public DefaultBlockValidatorTests()
         {
             _fakeCrypto = new FakeCrypto();
             _faker = new Bogus.Faker();
+
             _fakeTransactionValidator = new Mock<ITransactionValidator>();
             _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(It.IsAny<Transaction>(), It.IsAny<BlockChain>())).Returns(true);
+
+            _fakeState = new State() { Difficulty = _faker.Random.Int(1, 5) };
+        }
+
+        [Fact]
+        public void HasValidHeader_ReturnsInvalid_IfBlockDifficultyDoesNotMatchState(){
+            var block = GetValidBlockBuilder().WithDifficulty(_fakeState.Difficulty + 1).Build();
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
+
+            var result = blockValidator.HasValidHeader(block);
+
+            Assert.False(result.IsValid);
+            Assert.Equal(BlockValidationMessage.BlockDifficultyInvalid, result.Error);
         }
 
         /// <summary>
@@ -25,10 +40,10 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void HasValidHeader_ReturnsInvalid_IfHashedBlockDoesntMeetDifficulty(){
-            var block = new BlockBuilder().WithHash(_faker.Random.Hash()).Build();
+            var block = GetValidBlockBuilder().WithHash(_faker.Random.Hash()).Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
 
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.HasValidHeader(block);
 
@@ -42,9 +57,9 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void HasValidHeader_ReturnsInvalid_IfBlockHashIsNotValid(){
-            var block = new BlockBuilder().Build();
+            var block = GetValidBlockBuilder().Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(_faker.Random.Hash());
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.HasValidHeader(block);
 
@@ -57,9 +72,9 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void HasValidHeader_ReturnsValid_IfHeaderIsValid(){
-            var block = new BlockBuilder().Build();
+            var block = GetValidBlockBuilder().Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.HasValidHeader(block);
 
@@ -71,7 +86,7 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValidBlock_ReturnsInvalid_IfBlockIsNull(){
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.IsValidBlock(null, new BlockChain());
 
@@ -84,9 +99,9 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValidBlock_ReturnsInvalid_IfTransactionIsNull(){
-            var block = new BlockBuilder().WithTransaction(null).Build();
+            var block = GetValidBlockBuilder().WithTransaction(null).Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.IsValidBlock(block, new BlockChain());
 
@@ -99,13 +114,13 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValidBlock_ReturnsInvalid_IfTransactionIsInvalid(){
-            var block = new BlockBuilder().Build();
+            var block = GetValidBlockBuilder().Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
             var invalidMessage = _faker.Lorem.Sentence();
             _fakeTransactionValidator.Setup(x => x.IsBlockTransactionValid(block.Transaction, It.IsAny<BlockChain>()))
                 .Returns(ValidationResult.Invalid(invalidMessage));
 
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.IsValidBlock(block, new BlockChain());
 
@@ -118,20 +133,23 @@ namespace FooCoin.Core.UnitTests.Validation
         /// </summary>
         [Fact]
         public void IsValidBlock_ReturnsValid_IfBlockIsValid(){
-            var block = new BlockBuilder().Build();
+            var block = GetValidBlockBuilder().Build();
             _fakeCrypto.Setup(x => x.Hash(block)).Returns(block.Hash);
-            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object);
+            var blockValidator = new DefaultBlockValidator(_fakeCrypto.Object, _fakeTransactionValidator.Object, _fakeState);
 
             var result = blockValidator.IsValidBlock(block, new BlockChain());
 
             Assert.True(result.IsValid);
         }
 
+        private BlockBuilder GetValidBlockBuilder()
+            => new BlockBuilder().WithDifficulty(_fakeState.Difficulty).GenerateHash();
+
         // [Fact]
         // public void IsValidBlock_ReturnsInvalid_IfPreviousBlockHashDoesntReferencePreviousBlock(){
 
         // }
-        
+
         // [Fact]
         // public void IsValidBlock_ReturnsInvalid_IfAssignedDifficultyIsInvalid(){
 

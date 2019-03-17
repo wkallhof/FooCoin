@@ -14,16 +14,19 @@ namespace FooCoin.Core.Validation
         public static string TransactionWasNull = "The block transaction was null";
         public static string BlockHashInvalid = "The block's hash is not a hash of the block";
         public static string BlockHashDoesNotMeetDifficulty = "The block's hash does not meet difficulty standards";
+        public static string BlockDifficultyInvalid = "The block's set difficulty is invalid for this node.";
     }
 
     public class DefaultBlockValidator : IBlockValidator
     {
         private ICrypto _crypto;
         private ITransactionValidator _transactionValidator;
+        private State _state;
 
-        public DefaultBlockValidator(ICrypto crypto, ITransactionValidator transactionValidator){
+        public DefaultBlockValidator(ICrypto crypto, ITransactionValidator transactionValidator, State state){
             _crypto = crypto;
             _transactionValidator = transactionValidator;
+            _state = state;
         }
 
         public ValidationResult IsValidBlock(Block block, BlockChain blockChain)
@@ -43,6 +46,9 @@ namespace FooCoin.Core.Validation
 
         public ValidationResult HasValidHeader(Block block)
         {
+            if(block.Difficulty != _state.Difficulty)
+                return ValidationResult.Invalid(BlockValidationMessage.BlockDifficultyInvalid);
+                
             var startString = string.Join("", Enumerable.Range(0, block.Difficulty).Select(x => "0"));
             var hash = _crypto.Hash(block);
 

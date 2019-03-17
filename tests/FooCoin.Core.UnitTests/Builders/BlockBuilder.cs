@@ -25,8 +25,9 @@ namespace FooCoin.Core.UnitTests.Builders
             Difficulty = _faker.Random.Int(min: 0, max: 10);
             Nonce = _faker.Random.String(10);
             Transaction = new TransactionBuilder();
-            Hash = string.Join("", Enumerable.Range(0, Difficulty).Select(x => "0")) + _faker.Random.Hash();
             Miner = _faker.Internet.UserName();
+
+            GenerateHash();
         }
 
         public Block Build()
@@ -51,8 +52,18 @@ namespace FooCoin.Core.UnitTests.Builders
             return this;
         }
 
+        public BlockBuilder GenerateHash(){
+            Hash = string.Join("", Enumerable.Range(0, Difficulty).Select(x => "0")) + _faker.Random.Hash();
+            return this;
+        }
+
         public BlockBuilder WithTransaction(TransactionBuilder transaction){
             Transaction = transaction;
+            return this;
+        }
+
+        public BlockBuilder WithDifficulty(int difficulty){
+            Difficulty = difficulty;
             return this;
         }
     }

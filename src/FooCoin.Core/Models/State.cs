@@ -9,5 +9,6 @@ namespace FooCoin.Core.Models
         public BlockChain BlockChain { get; set; } = new BlockChain();
         public ConcurrentDictionary<string, Transaction> OutstandingTransactions { get; set; } = new ConcurrentDictionary<string, Transaction>();
         public ConcurrentDictionary<string, Uri> Peers { get; set; } = new ConcurrentDictionary<string, Uri>();
+        public int Difficulty = 5;
     }
 }
