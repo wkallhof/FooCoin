@@ -77,8 +77,8 @@ namespace FooCoin.Core.UnitTests.Validation
             var result = blockchainValidator.IsValid(blockchain);
 
             _fakeBlockValidator.Verify(x => x.IsValidBlock(It.IsAny<Block>(), blockchain), Times.Once);
-            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.Blocks.ElementAt(1), blockchain), Times.Once);
-            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.Blocks.ElementAt(0), blockchain), Times.Never);
+            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.ElementAt(1), blockchain), Times.Once);
+            _fakeBlockValidator.Verify(x => x.IsValidBlock(blockchain.ElementAt(0), blockchain), Times.Never);
         }
 
         /// <summary>

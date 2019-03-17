@@ -1,14 +1,13 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace FooCoin.Core.Models
 {
-    public class Blockchain
+    public class Blockchain : List<Block>
     {
-        public List<Block> Blocks { get; set; } = new List<Block>();
-
         public Transaction FindTransaction(string id){
-            var block = Blocks.FirstOrDefault(x => x.Transaction.Id.Equals(id));
+            var block = this.FirstOrDefault(x => x.Transaction.Id.Equals(id));
             return block == null ? null : block.Transaction;
         }
 
@@ -21,7 +20,7 @@ namespace FooCoin.Core.Models
             block.Hash = crypto.Hash(block);
 
             var blockchain = new Blockchain();
-            blockchain.Blocks.Add(block);
+            blockchain.Add(block);
             return blockchain;
         }
     }

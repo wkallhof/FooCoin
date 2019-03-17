@@ -15,10 +15,12 @@ namespace FooCoin.Core.UnitTests.Builders
 
         public Blockchain Build()
         {
-            return new Blockchain()
-            {
-                Blocks = Blocks != null ? Blocks.Select(x => x.Build()).ToList() : null
-            };
+            if(Blocks == null)
+                return new Blockchain();
+
+            var blockchain = new Blockchain();
+            blockchain.AddRange(Blocks.Select(x => x.Build()));
+            return blockchain;
         }
 
         public BlockchainBuilder WithBlocks(List<BlockBuilder> blocks){

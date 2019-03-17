@@ -87,7 +87,7 @@ namespace FooCoin.Node.Controllers
             if(!_blockchainValidator.IsValid(blockchain))
                 return BadRequest("Invalid Blockchain");
 
-            if(blockchain.Blocks.Count > _state.Blockchain.Blocks.Count){
+            if(blockchain.Count > _state.Blockchain.Count){
                 _state.Blockchain = blockchain;
                 _logger.LogInformation("Blockchain Copied From Peer");
 

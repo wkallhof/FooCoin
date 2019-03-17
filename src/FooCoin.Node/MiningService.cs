@@ -49,7 +49,7 @@ namespace FooCoin.Node
             if(!_state.OutstandingTransactions.Any())
                 return;
 
-            var lastBlock = _state.Blockchain.Blocks.LastOrDefault();
+            var lastBlock = _state.Blockchain.LastOrDefault();
             
             if(lastBlock == null)
                 return;
@@ -77,7 +77,7 @@ namespace FooCoin.Node
 
             _logger.LogInformation("Block mined!");
             _state.OutstandingTransactions.TryRemove(transaction.Key, out var removedTransaction);
-            _state.Blockchain.Blocks.Add(block);
+            _state.Blockchain.Add(block);
 
             // if we've really goobered the blockchain, just reset it
             if(!_blockchainValidator.IsValid(_state.Blockchain)){

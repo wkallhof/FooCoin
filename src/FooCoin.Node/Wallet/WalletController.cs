@@ -105,11 +105,11 @@ namespace FooCoin.Node.Wallet
         }
 
         private IEnumerable<Transaction> GetAllTransactionsWhereCoinReceived(string pubKeyHash){
-            return _state.Blockchain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
+            return _state.Blockchain.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
         }
 
         private bool TransactionOutputWasSpent(string transactionId, int outputIndex){
-            return _state.Blockchain.Blocks
+            return _state.Blockchain
                 .SelectMany(x => x.Transaction.Inputs)
                 .Any(x => x.TransactionId.Equals(transactionId) && x.OutputIndex.Equals(outputIndex));
         }

@@ -33,7 +33,7 @@ namespace FooCoin.Core.Validation
         public ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, Blockchain blockchain)
         {
             // validate transaction not already in blockchain
-            if(blockchain.Blocks.Any(x => x.Transaction.Id.Equals(transaction.Id)))
+            if(blockchain.Any(x => x.Transaction.Id.Equals(transaction.Id)))
                 return Invalid(TransactionValidationMessage.TransactionAlreadyInBlockchain);
 
             return IsBlockTransactionValid(transaction, blockchain);
@@ -73,7 +73,7 @@ namespace FooCoin.Core.Validation
                     return Invalid(TransactionValidationMessage.InputSignatureInvalid);
 
                 // validate matching output is unspent
-                if(blockchain.Blocks.Any(x => 
+                if(blockchain.Any(x => 
                     !x.Transaction.Id.Equals(transaction.Id) 
                     && x.Transaction.Inputs.Any(y => y.TransactionId.Equals(input.TransactionId) && y.OutputIndex.Equals(input.OutputIndex))))
                     return Invalid(TransactionValidationMessage.InputsOutputSpent);

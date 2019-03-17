@@ -26,22 +26,22 @@ namespace FooCoin.Core.Validation
         public ValidationResult IsValid(Blockchain blockchain)
         {
             // make sure that we have blocks
-            if(blockchain?.Blocks == null || !blockchain.Blocks.Any())
+            if(blockchain == null || !blockchain.Any())
                 return ValidationResult.Invalid(BlockchainValidationMessage.BlockchainIsNullOrEmpty);
 
             // if we only have one, return valid
-            if(blockchain.Blocks.Count == 1)
+            if(blockchain.Count == 1)
                 return ValidationResult.Valid();
 
             // skip block validation for the genesis block
-            var blocksWithoutGenesis = blockchain.Blocks.Skip(1);
+            var blocksWithoutGenesis = blockchain.Skip(1);
 
             // ensure all blocks themselves are valid
             if(!blocksWithoutGenesis.All(x => _blockValidator.IsValidBlock(x, blockchain)))
                 return ValidationResult.Invalid(BlockchainValidationMessage.NotAllBlocksAreValid);
 
             // ensure all blocks are properly linked in order
-            if(!blockchain.Blocks.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true))
+            if(!blockchain.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true))
                 return ValidationResult.Invalid(BlockchainValidationMessage.NotAllBlocksAreLinked);
 
             return ValidationResult.Valid();

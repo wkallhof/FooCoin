@@ -145,7 +145,7 @@ namespace FooCoin.Core.UnitTests.Validation
             var random = new Randomizer();
             var blockchain = new Blockchain();
 
-            transactions.ToList().ForEach(x => blockchain.Blocks.Add(new Block(random.Hash(10), x)));
+            transactions.ToList().ForEach(x => blockchain.Add(new Block(random.Hash(10), x)));
 
             return blockchain;
         }
