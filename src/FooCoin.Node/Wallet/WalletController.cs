@@ -34,21 +34,9 @@ namespace FooCoin.Node.Wallet
 
         [HttpGet("")]
         public IActionResult Wallet(){
-            decimal balance = 0;
             var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
-            var transactionsToMe = GetAllTransactionsWhereCoinReceived(pubKeyHash);
-            foreach(var transaction in transactionsToMe){
-                for (var i = 0; i < transaction.Outputs.Count; i++){
-                    var output = transaction.Outputs.ElementAt(i);
-                    if(output.PubKeyHash != pubKeyHash)
-                        continue;
-
-                    balance += output.Amount;
-                    if(TransactionOutputWasSpent(transaction.Id, i))
-                        balance = balance - output.Amount;
-                }
-            }
-
+            var balance = GetUnspentOutputs(pubKeyHash).Sum(x => x.Amount);
+            
             return Ok(new
             {
                 PubKeyHash = pubKeyHash,
