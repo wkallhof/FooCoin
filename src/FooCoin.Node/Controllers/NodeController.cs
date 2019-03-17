@@ -70,9 +70,12 @@ namespace FooCoin.Node.Controllers
                  && !_state.OutstandingTransactions.Any(x => x.Id.Equals(transaction.Id))){
 
                 _state.OutstandingTransactions.Add(transaction);
-                _logger.LogInformation($"Transaction Added : " + transaction.Id);
+                _logger.LogInformation($"Incoming Transaction Added : " + transaction.Id);
 
                 await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x, transaction)));
+            }
+            else{
+                _logger.LogInformation($"Incoming Transaction Ignored : " + transaction.Id);
             }
 
             return Ok();

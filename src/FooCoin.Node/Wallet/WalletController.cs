@@ -10,7 +10,7 @@ using FooCoin.Core.Validation;
 using FooCoin.Core.Extensions;
 using FooCoin.Core.Models;
 
-namespace FooCoin.Node.Controllers
+namespace FooCoin.Node.Wallet
 {
     [Route("wallet")]
     [ApiController]
@@ -34,9 +34,9 @@ namespace FooCoin.Node.Controllers
 
         [HttpGet("")]
         public IActionResult Wallet(){
-            var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
             decimal balance = 0;
-            var transactionsToMe = _state.BlockChain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
+            var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
+            var transactionsToMe = GetAllTransactionsWhereCoinReceived(pubKeyHash);
             foreach(var transaction in transactionsToMe){
                 for (var i = 0; i < transaction.Outputs.Count; i++){
                     var output = transaction.Outputs.ElementAt(i);
@@ -44,8 +44,7 @@ namespace FooCoin.Node.Controllers
                         continue;
 
                     balance += output.Amount;
-                    var moneySpent = _state.BlockChain.Blocks.FirstOrDefault(x => x.Transaction.Inputs.Any(y => y.TransactionId.Equals(transaction.Id) && y.OutputIndex.Equals(i))) != null;
-                    if(moneySpent)
+                    if(TransactionOutputWasSpent(transaction.Id, i))
                         balance = balance - output.Amount;
                 }
             }
@@ -58,7 +57,76 @@ namespace FooCoin.Node.Controllers
         }
 
         [HttpPost("send-money")]
-        public async Task<ActionResult<Transaction>> Transaction([FromBody] Transaction transaction){
+        public async Task<ActionResult<Transaction>> SendMoney([FromBody] SendMoneyRequest request){
+            if(!ModelState.IsValid)
+                return BadRequest("Invalid request. Make sure To and Amount are provided");
+
+            var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
+            var unspentOutputs = GetUnspentOutputs(pubKeyHash);
+            var unspentValue = unspentOutputs.Sum(x => x.Amount);
+            if( unspentValue < request.Amount)
+                return BadRequest($"You do not have {request.Amount} to spend. Current unspent balance: {unspentValue}");
+
+            var outputsToSpend = new List<UnspentOutput>();
+            while(outputsToSpend.Sum(x => x.Amount) < request.Amount){
+                var lastItem = unspentOutputs.Last();
+                outputsToSpend.Add(lastItem);
+                unspentOutputs.Remove(lastItem);
+            }
+
+            // build inputs
+            var inputs = outputsToSpend.Select(x => new Input()
+            {
+                TransactionId = x.TransactionId,
+                OutputIndex = x.OutputIndex
+            });
+
+            // build outputs
+            var outputs = new List<Output>();
+            var valueBackToSelf = outputsToSpend.Sum(x => x.Amount) - request.Amount;
+            
+            if(valueBackToSelf > 0)
+                outputs.Add(new Output() { PubKeyHash = pubKeyHash, Amount = valueBackToSelf });
+
+            outputs.Add(new Output() { PubKeyHash = request.To, Amount = request.Amount });
+
+            var transaction = new Transaction(inputs.ToList(), outputs);
+
+            return await BuildTransaction(transaction);
+        }
+
+        private List<UnspentOutput> GetUnspentOutputs(string pubKeyHash){
+            var unspentOutputs = new List<UnspentOutput>();
+            var transactions = GetAllTransactionsWhereCoinReceived(pubKeyHash);
+            foreach(var transaction in transactions){
+                for (var i = 0; i < transaction.Outputs.Count; i++){
+                    var output = transaction.Outputs.ElementAt(i);
+                    if(output.PubKeyHash != pubKeyHash)
+                        continue;
+
+                    if(!TransactionOutputWasSpent(transaction.Id, i))
+                        unspentOutputs.Add(new UnspentOutput() { 
+                            OutputIndex = i, 
+                            TransactionId = transaction.Id, 
+                            Amount = output.Amount 
+                        });
+                }
+            }
+
+            return unspentOutputs;
+        }
+
+        private IEnumerable<Transaction> GetAllTransactionsWhereCoinReceived(string pubKeyHash){
+            return _state.BlockChain.Blocks.Where(x => x.Transaction.Outputs.Any(y => y.PubKeyHash.Equals(pubKeyHash))).Select(x => x.Transaction);
+        }
+
+        private bool TransactionOutputWasSpent(string transactionId, int outputIndex){
+            return _state.BlockChain.Blocks
+                .SelectMany(x => x.Transaction.Inputs)
+                .Any(x => x.TransactionId.Equals(transactionId) && x.OutputIndex.Equals(outputIndex));
+        }
+
+        private async Task<ActionResult<Transaction>> BuildTransaction(Transaction transaction){
             if(transaction?.Inputs == null 
                 || transaction?.Outputs == null 
                 || !transaction.Inputs.Any() 

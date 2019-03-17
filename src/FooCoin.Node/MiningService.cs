@@ -8,12 +8,13 @@ using Microsoft.Extensions.Logging;
 using FooCoin.Core;
 using FooCoin.Core.Models;
 using FooCoin.Core.Validation;
+using Newtonsoft.Json;
 
 namespace FooCoin.Node
 {
     internal class MiningService : IHostedService, IDisposable
     {
-        private const int DIFFICULTY = 5;
+        private const int DIFFICULTY = 4;
         private readonly ILogger _logger;
         private NoOverlapTimer _timer;
         private State _state;
@@ -64,17 +65,18 @@ namespace FooCoin.Node
             block.Miner = "FooCoinMinder";
             block.UnixTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             block.Nonce = Guid.NewGuid().ToString();
+            block.Hash = _crypto.Hash(block);
 
             while(!_blockValidator.HasValidHeader(block)){
                 block.Nonce = Guid.NewGuid().ToString();
                 block.UnixTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                block.Hash = _crypto.Hash(block);
             }
-
-            block.Hash = _crypto.Hash(block);
 
             if(!TransactionValid(transaction))
                 return;
 
+            _logger.LogInformation("Block mined!");
             _state.OutstandingTransactions.Remove(transaction);
             _state.BlockChain.Blocks.Add(block);
 

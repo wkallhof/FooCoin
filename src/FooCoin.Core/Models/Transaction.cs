@@ -20,7 +20,7 @@ namespace FooCoin.Core.Models
         public string GetHashMessage(ICrypto crypto)
         {
             var inputs = string.Join(",", Inputs.Select(x => $"{x.TransactionId}:{x.OutputIndex}:{x.FullPubKey}{x.Signature}"));
-            var outputs = string.Join(",", Outputs.Select(x => $"{x.PubKeyHash}:{x.Amount}"));
+            var outputs = string.Join(",", Outputs.Select(x => $"{x.PubKeyHash}:{x.Amount.ToString("G29")}"));
             return $"{inputs}:{outputs}";
         }
     }
