@@ -9,8 +9,8 @@ namespace WadeCoin.Core.Models
     {
         public string Id { get; set; }
 
-        public List<Input> Inputs;
-        public List<Output> Outputs;
+        public List<Input> Inputs { get; }
+        public List<Output> Outputs { get; }
 
         public Transaction(List<Input> inputs, List<Output> outputs){
             Inputs = inputs;

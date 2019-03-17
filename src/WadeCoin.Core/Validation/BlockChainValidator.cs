@@ -6,7 +6,13 @@ namespace WadeCoin.Core.Validation
 {
     public interface IBlockChainValidator
     {
-        bool IsValid(BlockChain blockChain);
+        ValidationResult IsValid(BlockChain blockChain);
+    }
+
+    public class BlockChainValidationMessage{
+        public static string BlockChainIsNullOrEmpty = "The blockchain is null or empty";
+        public static string NotAllBlocksAreValid = "Not all blocks in blockchain are valid";
+        public static string NotAllBlocksAreLinked = "Not all blocks are linked in blockchain";
     }
 
     public class DefaultBlockChainValidator : IBlockChainValidator
@@ -17,14 +23,28 @@ namespace WadeCoin.Core.Validation
             _blockValidator = blockValidator;
         }
 
-        public bool IsValid(BlockChain blockChain)
+        public ValidationResult IsValid(BlockChain blockChain)
         {
+            // make sure that we have blocks
+            if(blockChain?.Blocks == null || !blockChain.Blocks.Any())
+                return ValidationResult.Invalid(BlockChainValidationMessage.BlockChainIsNullOrEmpty);
+
+            // if we only have one, return valid
+            if(blockChain.Blocks.Count == 1)
+                return ValidationResult.Valid();
+
+            // skip block validation for the genesis block
             var blocksWithoutGenesis = blockChain.Blocks.Skip(1);
 
-            var allBlocksValid = blocksWithoutGenesis.All(x => _blockValidator.IsValidBlock(x, blockChain));
-            var hashesValid = blocksWithoutGenesis.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true);
+            // ensure all blocks themselves are valid
+            if(!blocksWithoutGenesis.All(x => _blockValidator.IsValidBlock(x, blockChain)))
+                return ValidationResult.Invalid(BlockChainValidationMessage.NotAllBlocksAreValid);
 
-            return allBlocksValid && hashesValid;
+            // ensure all blocks are properly linked in order
+            if(!blockChain.Blocks.SelectTwo((a, b) => a.Hash == b.PreviousBlockHash).All(x => x == true))
+                return ValidationResult.Invalid(BlockChainValidationMessage.NotAllBlocksAreLinked);
+
+            return ValidationResult.Valid();
         }
     }
 }

@@ -17,9 +17,11 @@ namespace WadeCoin.Core.Models
                 new Output(){ Amount = 500000, PubKeyHash = crypto.DoubleHash(publicKey) }
             });
             firstTransaction.Id = crypto.Hash(firstTransaction);
+            var block = new Block(null, firstTransaction);
+            block.Hash = crypto.Hash(block);
 
             var blockChain = new BlockChain();
-            blockChain.Blocks.Add(new Block(null, firstTransaction));
+            blockChain.Blocks.Add(block);
             return blockChain;
         }
     }

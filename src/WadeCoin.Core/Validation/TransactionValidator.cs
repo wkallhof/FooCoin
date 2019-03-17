@@ -9,6 +9,19 @@ namespace WadeCoin.Core.Validation
         ValidationResult IsUnconfirmedTransactionValid(Transaction transaction, BlockChain blockChain);
     }
 
+    public class TransactionValidationMessage{
+        public static string TransactionAlreadyInBlockChain = "Transaction is already in blockchain";
+        public static string IdDoesNotMatchHash = "Id does match transaction hash";
+        public static string MatchingTransactionNotFoundForInput = "No matching transaction found for input";
+        public static string PublicKeyMismatch = "Output PubKeyHash does not match hash of Input's full public key";
+        public static string InputsOutputSpent = "Input's referenced output was found in another transaction. It has been spent.";
+        public static string InputSignatureInvalid = "Input signature validation failed";
+        public static string InputValueDoesNotMatchOutputValue = "The sum of the inputs do not match the sum of the outputs.";
+        public static string TransactionMissingInputs = "The transaction is missing inputs";
+        public static string TransactionMissingOutputs = "The transaction is missing outputs";
+        public static string InputsOutputIndexExceedsRange = "The input references an output index that exceeds the referenced transactions output range.";
+    }
+
     public class DefaultTransactionValidator : ITransactionValidator
     {
         private ICrypto _crypto;
@@ -21,7 +34,7 @@ namespace WadeCoin.Core.Validation
         {
             // validate transaction not already in blockchain
             if(blockChain.Blocks.Any(x => x.Transaction.Id.Equals(transaction.Id)))
-                return Invalid("Transaction is already in blockchain");
+                return Invalid(TransactionValidationMessage.TransactionAlreadyInBlockChain);
 
             return IsBlockTransactionValid(transaction, blockChain);
         }
@@ -30,7 +43,13 @@ namespace WadeCoin.Core.Validation
 
             // validate Id
             if(_crypto.DoubleHash(transaction) != transaction.Id)
-                return Invalid("Id does match transaction hash");
+                return Invalid(TransactionValidationMessage.IdDoesNotMatchHash);
+
+            if(transaction.Inputs == null || !transaction.Inputs.Any())
+                return Invalid(TransactionValidationMessage.TransactionMissingInputs);
+
+            if(transaction.Outputs == null || !transaction.Outputs.Any())
+                return Invalid(TransactionValidationMessage.TransactionMissingOutputs);
 
             decimal moneyIn = 0;
             decimal moneyOut = transaction.Outputs.Sum(x => x.Amount);
@@ -38,29 +57,32 @@ namespace WadeCoin.Core.Validation
                 // validate we have a matching previous transaction for input
                 var previousTransaction = blockChain.FindTransaction(input.TransactionId);
                 if (previousTransaction == null)
-                    return Invalid("No matching transaction found for input");
+                    return Invalid(TransactionValidationMessage.MatchingTransactionNotFoundForInput);
 
+                if(input.OutputIndex < 0 || input.OutputIndex > previousTransaction.Outputs.Count -1)
+                    return Invalid(TransactionValidationMessage.InputsOutputIndexExceedsRange);
+                    
                 var output = previousTransaction.Outputs.ElementAt(input.OutputIndex);
 
                 // validate output pubkeymatch is pubkey
                 if (output.PubKeyHash != _crypto.DoubleHash(input.FullPubKey))
-                    return Invalid("Output PubKeyHash does not match hash of Input's full public key");
+                    return Invalid(TransactionValidationMessage.PublicKeyMismatch);
 
                 // validate owner is owner
                 if(!_crypto.ValidateSignature(GetInputSignatureHash(input, output), input.Signature, input.FullPubKey))
-                    return Invalid("Input signature validation failed");
+                    return Invalid(TransactionValidationMessage.InputSignatureInvalid);
 
                 // validate matching output is unspent
                 if(blockChain.Blocks.Any(x => 
                     !x.Transaction.Id.Equals(transaction.Id) 
                     && x.Transaction.Inputs.Any(y => y.TransactionId.Equals(input.TransactionId) && y.OutputIndex.Equals(input.OutputIndex))))
-                    return Invalid("Input's referenced output was found in another transaction. It has been spent.");
+                    return Invalid(TransactionValidationMessage.InputsOutputSpent);
 
                 moneyIn += output.Amount;
             }
 
             if(moneyIn != moneyOut)
-                return Invalid("The sum of the inputs do not match the sum of the outputs.");
+                return Invalid(TransactionValidationMessage.InputValueDoesNotMatchOutputValue);
 
             return ValidationResult.Valid();
         }
