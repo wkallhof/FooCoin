@@ -55,7 +55,7 @@ namespace FooCoin.Node
             catch (Exception e)
             {
                 _logger.LogError(e, $"Error communicating with {endpoint.Uri}. Removing peer");
-                _state.Peers.Remove(peer);
+                _state.Peers.TryRemove(peer.ToString(), out var removedPeer);
             }
         }
 
@@ -78,7 +78,7 @@ namespace FooCoin.Node
             catch (Exception e)
             {
                 _logger.LogError(e, $"Error communicating with {endpoint.Uri}. Removing peer");
-                _state.Peers.Remove(peer);
+                _state.Peers.TryRemove(peer.ToString(), out var removedPeer);
                 return null;
             }
         }

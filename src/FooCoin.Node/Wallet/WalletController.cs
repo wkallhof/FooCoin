@@ -36,7 +36,7 @@ namespace FooCoin.Node.Wallet
         public IActionResult Wallet(){
             var pubKeyHash = _crypto.DoubleHash(_privateState.PublicKey);
             var balance = GetUnspentOutputs(pubKeyHash).Sum(x => x.Amount);
-            
+
             return Ok(new
             {
                 PubKeyHash = pubKeyHash,
@@ -154,9 +154,9 @@ namespace FooCoin.Node.Wallet
             if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain))
                 return BadRequest("Transaction was invalid");
 
-            _state.OutstandingTransactions.Add(transaction);
+            _state.OutstandingTransactions.TryAdd(transaction.Id, transaction);
 
-            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x, transaction)));
+            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x.Value, transaction)));
 
             return transaction;
         }

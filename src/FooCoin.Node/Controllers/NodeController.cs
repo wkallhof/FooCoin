@@ -46,18 +46,19 @@ namespace FooCoin.Node.Controllers
                 return BadRequest("Invalid peer URI format detected");
 
             var peerUrisToAdd = peers.Select(x => new Uri(x, UriKind.Absolute))
-                .Where(x => !_privateState.PeersToIgnore.Contains(x) && !_state.Peers.Contains(x))
+                .Where(x => !_privateState.PeersToIgnore.ContainsKey(x.ToString()) && !_state.Peers.ContainsKey(x.ToString()))
                 .ToList();
 
             if(!peerUrisToAdd.Any())
                 return Ok();
 
-            _state.Peers.AddRange(peerUrisToAdd);
-            _state.Peers = _state.Peers.DistinctBy(x => x.ToString()).ToList();
-            peerUrisToAdd.ForEach(x => _logger.LogInformation($"Peer Added: {x}"));
+            peerUrisToAdd.ForEach(x => {
+                if(_state.Peers.TryAdd(x.ToString(), x))
+                    _logger.LogInformation($"Peer Added: {x}");
+            });
 
             //TODO: consider fire and forget
-            await Task.WhenAll(_state.Peers.Select(x => _gossipService.SharePeersAsync(x, _state.Peers)));
+            await Task.WhenAll(_state.Peers.Select(x => _gossipService.SharePeersAsync(x.Value, _state.Peers.ToList())));
             
             return Ok();
         }
@@ -67,12 +68,13 @@ namespace FooCoin.Node.Controllers
             UpdatePeersToIgnoreList();
 
             if(_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)
-                 && !_state.OutstandingTransactions.Any(x => x.Id.Equals(transaction.Id))){
+                 && !_state.OutstandingTransactions.ContainsKey(transaction.Id)){
 
-                _state.OutstandingTransactions.Add(transaction);
+                if(!_state.OutstandingTransactions.TryAdd(transaction.Id, transaction))
+                    return BadRequest("Transaction Already added");
+
                 _logger.LogInformation($"Incoming Transaction Added : " + transaction.Id);
-
-                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x, transaction)));
+                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareNewTransactionAsync(x.Value, transaction)));
             }
             else{
                 _logger.LogInformation($"Incoming Transaction Ignored : " + transaction.Id);
@@ -92,7 +94,7 @@ namespace FooCoin.Node.Controllers
                 _state.BlockChain = blockChain;
                 _logger.LogInformation("BlockChain Copied From Peer");
 
-                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x, blockChain)));
+                await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x.Value, blockChain)));
             }
             
             return Ok();
@@ -103,9 +105,9 @@ namespace FooCoin.Node.Controllers
         /// to the PeersToIgnore List so that we don't end up gossiping with ourselves.
         /// </summary>
         private void UpdatePeersToIgnoreList(){
-            var currentRequest = $"{Request.Scheme}://{Request.Host}";
-            _privateState.PeersToIgnore.Add(new Uri(currentRequest));
-            _privateState.PeersToIgnore = _privateState.PeersToIgnore.Distinct().ToList();
+            var currentRequest = new Uri($"{Request.Scheme}://{Request.Host}");
+            if(!_privateState.PeersToIgnore.ContainsKey(currentRequest.ToString()))
+                _privateState.PeersToIgnore.TryAdd(currentRequest.ToString(), currentRequest);
         }
     }
 }

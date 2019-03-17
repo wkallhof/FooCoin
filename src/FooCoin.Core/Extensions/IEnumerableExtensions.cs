@@ -1,10 +1,16 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace FooCoin.Core.Extensions
 {
     public static class IEnumerableExtensions
     {
+        public static List<V> ToList<K,V>(this ConcurrentDictionary<K,V> source){
+            return source.Select(x => x.Value).Distinct().ToList();
+        }
+        
         public static IEnumerable<TResult> SelectTwo<TSource, TResult>(this IEnumerable<TSource> source, Func<TSource, TSource, TResult> selector)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));

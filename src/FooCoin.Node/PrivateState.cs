@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace FooCoin.Node
@@ -7,6 +8,6 @@ namespace FooCoin.Node
     {
         public string PrivateKey { get; set; }
         public string PublicKey { get; set; }
-        public List<Uri> PeersToIgnore { get; set; } = new List<Uri>();
+        public ConcurrentDictionary<string, Uri> PeersToIgnore { get; set; } = new ConcurrentDictionary<string, Uri>();
     }
 }

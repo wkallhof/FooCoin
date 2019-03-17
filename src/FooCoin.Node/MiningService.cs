@@ -14,7 +14,7 @@ namespace FooCoin.Node
 {
     internal class MiningService : IHostedService, IDisposable
     {
-        private const int DIFFICULTY = 4;
+        private const int DIFFICULTY = 5;
         private readonly ILogger _logger;
         private NoOverlapTimer _timer;
         private State _state;
@@ -57,10 +57,10 @@ namespace FooCoin.Node
                 
             var transaction = _state.OutstandingTransactions.First();
 
-            if(!TransactionValid(transaction))
+            if(!TransactionValid(transaction.Value))
                 return;
 
-            var block = new Block(lastBlock.Hash, transaction);
+            var block = new Block(lastBlock.Hash, transaction.Value);
             block.Difficulty = DIFFICULTY;
             block.Miner = "FooCoinMinder";
             block.UnixTimeStamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -73,11 +73,11 @@ namespace FooCoin.Node
                 block.Hash = _crypto.Hash(block);
             }
 
-            if(!TransactionValid(transaction))
+            if(!TransactionValid(transaction.Value))
                 return;
 
             _logger.LogInformation("Block mined!");
-            _state.OutstandingTransactions.Remove(transaction);
+            _state.OutstandingTransactions.TryRemove(transaction.Key, out var removedTransaction);
             _state.BlockChain.Blocks.Add(block);
 
             // if we've really goobered the blockchain, just reset it
@@ -85,13 +85,13 @@ namespace FooCoin.Node
                 _state.BlockChain = BlockChain.Initialize(_crypto, _privateState.PublicKey);
             }
 
-            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x, _state.BlockChain)));
+            await Task.WhenAll(_state.Peers.Select(x => _gossipService.ShareBlockChainAsync(x.Value, _state.BlockChain)));
         }
 
         private bool TransactionValid(Transaction transaction){
             // validate this transaction is still valid
             if(!_transactionValidator.IsUnconfirmedTransactionValid(transaction, _state.BlockChain)){
-                _state.OutstandingTransactions.Remove(transaction);
+                _state.OutstandingTransactions.TryRemove(transaction.Id, out var removedTransaction);
                 return false;
             }
 
